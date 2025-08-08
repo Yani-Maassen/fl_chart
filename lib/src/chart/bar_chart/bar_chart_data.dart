@@ -205,6 +205,7 @@ class BarChartGroupData with EquatableMixin {
     List<BarChartRodData>? barRods,
     double? barsSpace,
     List<int>? showingTooltipIndicators,
+    this.badgeWidget,
   })  : groupVertically = groupVertically ?? false,
         barRods = barRods ?? const [],
         barsSpace = barsSpace ?? 2,
@@ -234,6 +235,12 @@ class BarChartGroupData with EquatableMixin {
   /// An important point is that you have to disable the default touch behaviour
   /// to show the tooltip manually, see [BarTouchData.handleBuiltInTouches].
   final List<int> showingTooltipIndicators;
+
+  /// Defines a widget that represents the section.
+  ///
+  /// This can be anything from a text, an image, an animation, and even a combination of widgets.
+  /// Use AnimatedWidgets to animate this widget.
+  final Widget? badgeWidget;
 
   /// width of the group (sum of all [BarChartRodData]'s width and spaces)
   double get width {

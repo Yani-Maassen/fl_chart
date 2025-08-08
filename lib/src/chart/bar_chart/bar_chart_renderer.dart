@@ -1,21 +1,23 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:fl_chart/src/chart/bar_chart/bar_chart_helper.dart';
 import 'package:fl_chart/src/chart/bar_chart/bar_chart_painter.dart';
 import 'package:fl_chart/src/chart/base/base_chart/base_chart_painter.dart';
 import 'package:fl_chart/src/chart/base/base_chart/render_base_chart.dart';
 import 'package:fl_chart/src/utils/canvas_wrapper.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 
 // coverage:ignore-start
 
 /// Low level BarChart Widget.
-class BarChartLeaf extends LeafRenderObjectWidget {
-  const BarChartLeaf({
+class BarChartLeaf extends MultiChildRenderObjectWidget {
+  BarChartLeaf({
     super.key,
     required this.data,
     required this.targetData,
     required this.canBeScaled,
     required this.chartVirtualRect,
-  });
+  }) : super(children: targetData.barGroups.toWidgets());
 
   final BarChartData data;
   final BarChartData targetData;
@@ -46,7 +48,10 @@ class BarChartLeaf extends LeafRenderObjectWidget {
 // coverage:ignore-end
 
 /// Renders our BarChart, also handles hitTest.
-class RenderBarChart extends RenderBaseChart<BarTouchResponse> {
+class RenderBarChart extends RenderBaseChart<BarTouchResponse>
+    with
+        ContainerRenderObjectMixin<RenderBox, MultiChildLayoutParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, MultiChildLayoutParentData> {
   RenderBarChart(
     BuildContext context,
     BarChartData data,
@@ -118,6 +123,63 @@ class RenderBarChart extends RenderBaseChart<BarTouchResponse> {
       paintHolder,
     );
     canvas.restore();
+    badgeWidgetPaint(context, offset);
+  }
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! MultiChildLayoutParentData) {
+      child.parentData = MultiChildLayoutParentData();
+    }
+  }
+
+  @override
+  void performLayout() {
+    var child = firstChild;
+    size = computeDryLayout(constraints);
+
+    final childConstraints = constraints.loosen();
+
+    var counter = 0;
+    final badgeOffsets = painter.getBadgeOffsets(
+      mockTestSize ?? size,
+      paintHolder,
+    );
+    while (child != null) {
+      if (counter >= badgeOffsets.length) {
+        break;
+      }
+      child.layout(
+        childConstraints.copyWith(maxHeight: 1000),
+        parentUsesSize: true,
+      );
+      final childParentData = child.parentData! as MultiChildLayoutParentData;
+      final sizeOffset = Offset(
+        child.size.width / 2,
+        child.size.height,
+      );
+      final newOffset = (badgeOffsets[counter]!) - sizeOffset;
+      childParentData.offset = Offset(
+        newOffset.dx.clamp(-24, (size.width - child.size.width) + 24),
+        newOffset.dy,
+      );
+      child = childParentData.nextSibling;
+      counter++;
+    }
+  }
+
+  void badgeWidgetPaint(PaintingContext context, Offset offset) {
+    RenderObject? child = firstChild;
+    var counter = 0;
+    while (child != null) {
+      final childParentData = child.parentData! as MultiChildLayoutParentData;
+      if (data.barGroups.length > counter &&
+          (data.barGroups[counter].barRods.firstOrNull?.toY ?? 0) > 0) {
+        context.paintChild(child, childParentData.offset + offset);
+      }
+      child = childParentData.nextSibling;
+      counter++;
+    }
   }
 
   @override

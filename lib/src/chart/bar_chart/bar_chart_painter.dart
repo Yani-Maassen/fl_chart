@@ -830,6 +830,77 @@ class BarChartPainter extends AxisChartPainter<BarChartData> {
 
     return null;
   }
+
+  /// Exposes offset for laying out the badge widgets upon the chart.
+  Map<int, Offset> getBadgeOffsets(
+    Size viewSize,
+    PaintHolder<BarChartData> holder,
+  ) {
+    final badgeWidgetsOffsets = <int, Offset>{};
+    final targetData = holder.targetData;
+    if (targetData.barGroups.isEmpty) {
+      return badgeWidgetsOffsets;
+    }
+
+    if (_groupBarsPosition == null) {
+      final groupsX = targetData.calculateGroupsX(viewSize.width);
+      _groupBarsPosition = calculateGroupAndBarsPosition(
+        viewSize,
+        groupsX,
+        targetData.barGroups,
+      );
+    }
+
+    for (var i = 0; i < _groupBarsPosition!.length; i++) {
+      final groupBarPos = _groupBarsPosition![i];
+      for (var j = 0; j < groupBarPos.barsX.length; j++) {
+        final barX = groupBarPos.barsX[j];
+        final barWidth = targetData.barGroups[i].barRods[j].width;
+        final halfBarWidth = barWidth / 2;
+
+        double barTopY;
+        double barBotY;
+
+        final isUpward = targetData.barGroups[i].barRods[j].isUpward();
+        if (isUpward) {
+          barTopY = getPixelY(
+            targetData.barGroups[i].barRods[j].toY,
+            viewSize,
+            holder,
+          );
+          barBotY = getPixelY(
+            targetData.barGroups[i].barRods[j].fromY +
+                targetData.barGroups[i].barRods[j].backDrawRodData.fromY,
+            viewSize,
+            holder,
+          );
+        } else {
+          barTopY = getPixelY(
+            targetData.barGroups[i].barRods[j].fromY +
+                targetData.barGroups[i].barRods[j].backDrawRodData.fromY,
+            viewSize,
+            holder,
+          );
+          barBotY = getPixelY(
+            targetData.barGroups[i].barRods[j].toY,
+            viewSize,
+            holder,
+          );
+        }
+
+        final touchExtraThreshold = targetData.barTouchData.touchExtraThreshold;
+
+        badgeWidgetsOffsets[i] = Offset(
+          barX + halfBarWidth,
+          isUpward
+              ? barTopY - touchExtraThreshold.top - 4
+              : barBotY + touchExtraThreshold.bottom + 4,
+        );
+      }
+    }
+
+    return badgeWidgetsOffsets;
+  }
 }
 
 @visibleForTesting

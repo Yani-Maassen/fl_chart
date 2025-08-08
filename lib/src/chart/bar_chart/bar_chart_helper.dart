@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:fl_chart/src/chart/bar_chart/bar_chart_data.dart';
+import 'package:flutter/widgets.dart';
 
 /// Contains anything that helps BarChart works
 class BarChartHelper {
@@ -44,5 +45,24 @@ class BarChartHelper {
       }
     }
     return (minY, maxY);
+  }
+}
+
+extension BarChartSectionDataListExtension on List<BarChartGroupData> {
+  List<Widget> toWidgets() {
+    final widgets = List<Widget>.filled(length, Container());
+    var allWidgetsAreNull = true;
+    asMap().entries.forEach((e) {
+      final index = e.key;
+      final section = e.value;
+      if (section.badgeWidget != null) {
+        widgets[index] = section.badgeWidget!;
+        allWidgetsAreNull = false;
+      }
+    });
+    if (allWidgetsAreNull) {
+      return List.empty();
+    }
+    return widgets;
   }
 }
